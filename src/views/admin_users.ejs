@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head><%- include('partials/head') %></head>
+<body>
+  <%- include('partials/langbtn') %>
+  <div class="page">
+    <div class="card">
+      <div class="logo-wrap"><img src="/logostemlab.png" alt="STEM Lab" /></div>
+      <h1>👥 <%= lang === 'en' ? 'Bookers' : 'รายการผู้จอง' %></h1>
+      <div class="subtitle"><%= lang === 'en' ? 'Sorted by most active bookings · filter by equipment' : 'เรียงจากจองมากที่สุด · กรองตามเครื่องมือ' %></div>
+      <%- include('partials/nav') %>
+
+      <div class="user-stats-bar">
+        <span class="stat-chip"><%= lang==='en'?'Total':'ทั้งหมด' %>: <strong><%= users.length %></strong> <%= lang==='en'?'students':'คน' %></span>
+        <span class="stat-chip chip-active"><%= lang==='en'?'With active bookings':'มีการจองอยู่' %>: <strong><%= users.filter(function(u){return u.active_count>0}).length %></strong></span>
+        <span class="stat-chip"><%= lang==='en'?'No booking yet':'ยังไม่เคยจอง' %>: <strong><%= users.filter(function(u){return u.total_count===0}).length %></strong></span>
+      </div>
+
+      <div class="filter-bar">
+        <label class="filter-label"><%= lang==='en'?'Filter by equipment:':'กรองตามเครื่องมือ:' %></label>
+        <select id="eqFilter" onchange="applyFilter()">
+          <option value=""><%= lang==='en'?'-- Show all --':'-- แสดงทั้งหมด --' %></option>
+          <% equipment.forEach(function(e) { %>
+            <option value="<%= e.id %>-<%= e.name %>"><%= e.name %></option>
+          <% }) %>
+        </select>
+        <span id="filterSummary" class="filter-summary"></span>
+      </div>
+    </div>
+
+    <% if (users.length === 0) { %>
+      <div class="card"><div class="empty"><%= lang==='en'?'No students have booked yet.':'ยังไม่มีนักศึกษาจองเข้ามา' %></div></div>
+    <% } %>
+
+    <div id="userList">
+    <% users.forEach(function(u) { %>
+      <div class="card user-card"
+           data-active="<%= u.active_count %>"
+           data-eq='<%= JSON.stringify(u.eqCounts) %>'>
+        <div class="user-card-header">
+          <div class="user-card-info">
+            <% if (u.avatar_url) { %><img src="<%= u.avatar_url %>" class="user-card-avatar" alt="" /><% } else { %>
+              <div class="user-card-avatar avatar-placeholder"><%= u.name.charAt(0).toUpperCase() %></div>
+            <% } %>
+            <div>
+              <div class="user-card-name"><%= u.name %></div>
+              <div class="user-card-email"><%= u.email %></div>
+            </div>
+          </div>
+          <div class="user-card-chips">
+            <span class="stat-chip <%= u.active_count > 0 ? 'chip-active' : '' %>">
+              <%= lang==='en'?'Active':'จองอยู่' %>: <strong><%= u.active_count %></strong>
+            </span>
+            <span class="stat-chip">
+              <%= lang==='en'?'All time':'รวมทั้งหมด' %>: <strong><%= u.total_count %></strong>
+            </span>
+            <span class="eq-filter-badge" id="badge-<%= u.id %>" style="display:none"></span>
+          </div>
+        </div>
+
+        <% if (Object.keys(u.eqCounts).length > 0) { %>
+          <div class="eq-usage-list">
+            <% Object.entries(u.eqCounts).forEach(function(entry) { %>
+              <% var eqName = entry[0]; var cnt = entry[1]; var pct = Math.round(cnt / rules.maxPerEquipment * 100); %>
+              <div class="eq-usage-row">
+                <span class="eq-usage-name"><%= eqName %></span>
+                <div class="eq-usage-prog-wrap">
+                  <div class="eq-usage-prog" style="width:<%= Math.min(pct,100) %>%;background:<%= pct>=100?'#cf1322':pct>=60?'#fa8c16':'#1a8a4c' %>"></div>
+                </div>
+                <span class="eq-usage-count <%= cnt >= rules.maxPerEquipment ? 'count-full' : '' %>">
+                  <%= cnt %>/<%= rules.maxPerEquipment %> <%= lang==='en'?'×':'ครั้ง' %>
+                </span>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="no-book"><%= lang==='en'?'No active bookings for any equipment.':'ยังไม่มีการจองเครื่องมือใดเลย' %></div>
+        <% } %>
+
+        <% if (u.bookings.length > 0) { %>
+          <button class="toggle-btn" style="margin-top:10px;" onclick="toggleWho(this)">
+            ▾ <%= lang==='en'?'Upcoming bookings':'การจองที่กำลังจะมาถึง' %> (<%= u.bookings.length %>)
+          </button>
+          <div class="who-list hidden">
+            <% u.bookings.forEach(function(b) { %>
+              <div class="who-row">
+                <span class="who-name"><%= b.equipment_name %></span>
+                <span class="who-email"><%= b.booking_date.toISOString().slice(0,10) %> &nbsp; <%= b.start_time.slice(0,5) %>–<%= b.end_time.slice(0,5) %></span>
+                <form action="/bookings/<%= b.booking_id %>/cancel" method="POST" style="display:inline" onsubmit="return confirm('<%= lang==='en'?'Cancel this booking?':'ยกเลิกการจองนี้?' %>')">
+                  <button type="submit" class="link-btn"><%= lang==='en'?'Cancel':'ยกเลิก' %></button>
+                </form>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    <% }) %>
+    </div>
+  </div>
+
+  <script>
+    var LANG = '<%= lang %>';
+    function toggleWho(btn) {
+      var list = btn.nextElementSibling;
+      var isOpen = !list.classList.contains('hidden');
+      list.classList.toggle('hidden', isOpen);
+      var count = btn.textContent.match(/\((\d+)\)/)?.[1] || '';
+      btn.textContent = isOpen
+        ? '▾ ' + (LANG==='en'?'Upcoming bookings':'การจองที่กำลังจะมาถึง') + (count?' ('+count+')':'')
+        : '▴ ' + (LANG==='en'?'Hide':'ซ่อน');
+    }
+
+    function applyFilter() {
+      var val = document.getElementById('eqFilter').value;
+      var cards = document.querySelectorAll('#userList .user-card');
+      var summary = document.getElementById('filterSummary');
+
+      if (!val) {
+        cards.forEach(function(c) { c.style.display=''; document.getElementById('badge-'+c.dataset.uid)?.remove(); });
+        // reset badges
+        document.querySelectorAll('.eq-filter-badge').forEach(function(b){ b.style.display='none'; b.textContent=''; });
+        summary.textContent = '';
+        return;
+      }
+
+      var parts = val.split(/-(.+)/);
+      var eqName = parts[1];
+      var hasCount = 0, noneCount = 0;
+
+      cards.forEach(function(c) {
+        var eq = JSON.parse(c.dataset.eq || '{}');
+        var cnt = eq[eqName] || 0;
+        var userId = c.querySelector('.user-card-name').closest('.user-card-header').nextElementSibling?.dataset?.uid;
+        // find badge in this card
+        var badge = c.querySelector('.eq-filter-badge');
+
+        if (cnt > 0) {
+          hasCount++;
+          c.style.display = '';
+          badge.style.display = 'inline-block';
+          badge.className = 'eq-filter-badge badge-has';
+          badge.textContent = (LANG==='en'?'Booked ':'จอง ') + cnt + (LANG==='en'?' time(s)':'ครั้ง');
+        } else {
+          noneCount++;
+          c.style.display = '';
+          badge.style.display = 'inline-block';
+          badge.className = 'eq-filter-badge badge-none';
+          badge.textContent = LANG==='en'?'Never booked':'ยังไม่เคยจอง';
+        }
+      });
+
+      summary.textContent = (LANG==='en'
+        ? hasCount+' booked · '+noneCount+' never booked'
+        : 'จองแล้ว '+hasCount+' คน · ยังไม่จอง '+noneCount+' คน');
+    }
+  </script>
+</body>
+</html>

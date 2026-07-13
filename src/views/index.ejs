@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head><%- include('partials/head') %></head>
+<body>
+  <%- include('partials/langbtn') %>
+  <div class="page">
+    <div class="card">
+      <div class="logo-wrap"><img src="/logostemlab.png" alt="STEM Lab" /></div>
+      <h1>🗓️ <%= t.appTitle %></h1>
+      <div class="subtitle"><%= t.appSubtitle %></div>
+      <%- include('partials/nav') %>
+
+      <h2><%= t.sectionBook %></h2>
+      <% if (!bookingOpen) { %>
+        <div class="alert"><%= t.bookingClosedNotice %></div>
+      <% } %>
+      <form id="bookingForm" action="/bookings" method="POST" style="<%= !bookingOpen ? 'opacity:.45;pointer-events:none;' : '' %>">
+        <div class="form-grid">
+          <label><%= t.labelEquipment %>
+            <select name="equipment_id" id="equipmentSelect" required>
+              <option value=""><%= t.selectEquipment %></option>
+              <% equipment.forEach(function(e) { %>
+                <option value="<%= e.id %>" data-name="<%= e.name %>" data-capacity="<%= e.capacity %>">
+                  <%= e.name %> (<%= t.capacityLabel %> <%= e.capacity %> <%= t.seatLabel %>)
+                </option>
+              <% }) %>
+            </select>
+          </label>
+          <label><%= t.labelDate %>
+            <select name="booking_date" id="dateInput" required>
+              <option value=""><%= t.selectDate %></option>
+              <% fridays.forEach(function(f) { %>
+                <option value="<%= f %>"><%= f %></option>
+              <% }) %>
+            </select>
+          </label>
+        </div>
+
+        <div class="slot-picker" id="slotPicker">
+          <% slots.forEach(function(s) { %>
+            <label class="slot-box" data-slot="<%= s.start %>-<%= s.end %>">
+              <input type="radio" name="slotChoice" value="<%= s.start %>|<%= s.end %>" required />
+              <span class="slot-time"><%= s.start %> - <%= s.end %></span>
+              <span class="slot-status"><%= t.slotAvail %></span>
+            </label>
+          <% }) %>
+        </div>
+        <input type="hidden" name="start_time" id="startTimeInput" />
+        <input type="hidden" name="end_time" id="endTimeInput" />
+
+        <button type="submit" class="btn-primary" style="margin-top:16px;"><%= t.btnBook %></button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2><%= t.sectionMyBookings %></h2>
+      <% if (myBookings.length === 0) { %>
+        <div class="empty"><%= t.emptyBookings %></div>
+      <% } else { %>
+        <% myBookings.forEach(function(b) { %>
+          <div class="ticket">
+            <div class="ticket-main">
+              <div class="ticket-label"><%= t.ticketLabelEquipment %></div>
+              <div class="ticket-equipment"><%= b.equipment_name %></div>
+              <div class="ticket-row">
+                <div>
+                  <div class="ticket-label"><%= t.ticketLabelDate %></div>
+                  <div class="ticket-date"><%= b.booking_date.toISOString().slice(0,10) %></div>
+                </div>
+                <div>
+                  <div class="ticket-label"><%= t.ticketLabelTime %></div>
+                  <div class="ticket-time"><%= b.start_time.slice(0,5) %> - <%= b.end_time.slice(0,5) %></div>
+                </div>
+              </div>
+              <div class="ticket-owner"><%= t.ticketLabelBooker %>: <%= user.name %></div>
+            </div>
+            <div class="ticket-stub">
+              <span class="ticket-status"><%= t.ticketConfirmed %></span>
+              <form action="/bookings/<%= b.id %>/cancel" method="POST">
+                <button type="submit" class="link-btn"><%= t.ticketCancel %></button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+    <div class="card">
+      <h2><%= t.sectionPastBookings %></h2>
+      <% if (pastBookings.length === 0) { %>
+        <div class="empty"><%= t.emptyPastBookings %></div>
+      <% } else { %>
+        <% pastBookings.forEach(function(b) { %>
+          <div class="ticket ticket-past">
+            <div class="ticket-main">
+              <div class="ticket-label"><%= t.ticketLabelEquipment %></div>
+              <div class="ticket-equipment"><%= b.equipment_name %></div>
+              <div class="ticket-row">
+                <div>
+                  <div class="ticket-label"><%= t.ticketLabelDate %></div>
+                  <div class="ticket-date"><%= b.booking_date.toISOString().slice(0,10) %></div>
+                </div>
+                <div>
+                  <div class="ticket-label"><%= t.ticketLabelTime %></div>
+                  <div class="ticket-time"><%= b.start_time.slice(0,5) %> - <%= b.end_time.slice(0,5) %></div>
+                </div>
+              </div>
+              <div class="ticket-owner"><%= t.ticketLabelBooker %>: <%= user.name %></div>
+            </div>
+            <div class="ticket-stub">
+              <span class="ticket-status ticket-status-used"><%= b.status === 'cancelled' ? t.ticketCancelled : t.ticketUsed %></span>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+
+  <script>
+    const SLOT_AVAIL = '<%= t.slotAvail %>';
+    const SLOT_FULL = '<%= t.slotFull %>';
+    const CAP_LABEL = '<%= t.capacityLabel %>';
+    const SEAT_LABEL = '<%= t.seatLabel %>';
+
+    const equipmentSelect = document.getElementById('equipmentSelect');
+    const dateInput = document.getElementById('dateInput');
+    const slotPicker = document.getElementById('slotPicker');
+    const startTimeInput = document.getElementById('startTimeInput');
+    const endTimeInput = document.getElementById('endTimeInput');
+
+    function resetSlotBoxes() {
+      slotPicker.querySelectorAll('.slot-box').forEach((box) => {
+        box.classList.remove('booked', 'selected');
+        box.querySelector('input').disabled = false;
+        box.querySelector('input').checked = false;
+        box.querySelector('.slot-status').textContent = SLOT_AVAIL;
+      });
+      startTimeInput.value = '';
+      endTimeInput.value = '';
+    }
+
+    async function loadEquipmentAvailability() {
+      const date = dateInput.value;
+      const options = equipmentSelect.querySelectorAll('option[data-name]');
+      if (!date) {
+        options.forEach((opt) => {
+          opt.textContent = `${opt.dataset.name} (${CAP_LABEL} ${opt.dataset.capacity} ${SEAT_LABEL})`;
+        });
+        return;
+      }
+      const res = await fetch(`/equipment/availability?date=${date}`);
+      const availability = await res.json();
+      options.forEach((opt) => {
+        const info = availability[opt.value];
+        if (!info) return;
+        const slotText = info.slots.map((s) => `${s.start} เหลือ ${Math.max(s.remaining, 0)}`).join(', ');
+        opt.textContent = `${opt.dataset.name} (${CAP_LABEL} ${opt.dataset.capacity} ${SEAT_LABEL} — ${slotText})`;
+      });
+    }
+
+    async function loadSlots() {
+      const eqId = equipmentSelect.value;
+      const date = dateInput.value;
+      resetSlotBoxes();
+      if (!eqId || !date) return;
+      const res = await fetch(`/equipment/${eqId}/slots?date=${date}`);
+      const counts = await res.json();
+      slotPicker.querySelectorAll('.slot-box').forEach((box) => {
+        const [start, end] = box.dataset.slot.split('-');
+        const info = counts.find((c) => c.start === start && c.end === end);
+        if (!info) return;
+        if (info.remaining <= 0) {
+          box.classList.add('booked');
+          box.querySelector('input').disabled = true;
+          box.querySelector('.slot-status').textContent = SLOT_FULL;
+        } else {
+          box.querySelector('.slot-status').textContent = `เหลือ ${info.remaining}/${info.capacity} ที่`;
+        }
+      });
+    }
+
+    slotPicker.addEventListener('change', (e) => {
+      if (e.target.name !== 'slotChoice') return;
+      slotPicker.querySelectorAll('.slot-box').forEach((box) => box.classList.remove('selected'));
+      const [start, end] = e.target.value.split('|');
+      startTimeInput.value = start;
+      endTimeInput.value = end;
+      e.target.closest('.slot-box').classList.add('selected');
+    });
+
+    equipmentSelect.addEventListener('change', loadSlots);
+    dateInput.addEventListener('change', () => {
+      loadEquipmentAvailability();
+      loadSlots();
+    });
+  </script>
+</body>
+</html>

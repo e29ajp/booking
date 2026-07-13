@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head><%- include('partials/head') %></head>
+<body>
+  <%- include('partials/langbtn') %>
+  <div class="page">
+    <div class="card">
+      <div class="logo-wrap"><img src="/logostemlab.png" alt="STEM Lab" /></div>
+      <% if (currentUser) { %><%- include('partials/nav') %><% } %>
+      <div class="alert"><%= message %></div>
+      <a href="/" class="back-link"><%= t.backHome %></a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head><%- include('partials/head') %></head>
+<body>
+  <%- include('partials/langbtn') %>
+  <div class="page">
+    <div class="card">
+      <div class="logo-wrap"><img src="/logostemlab.png" alt="STEM Lab" /></div>
+      <h1>⚙️ <%= t.adminEquipTitle %></h1>
+      <div class="subtitle"><%= t.adminEquipSubtitle %></div>
+      <%- include('partials/nav') %>
+
+      <div class="booking-toggle-bar">
+        <span class="booking-status-label <%= bookingOpen ? 'status-open' : 'status-closed' %>">
+          <%= bookingOpen ? t.bookingOpenStatus : t.bookingClosedStatus %>
+        </span>
+        <form action="/admin/booking-toggle" method="POST">
+          <button type="submit" class="btn-toggle <%= bookingOpen ? 'btn-toggle-close' : 'btn-toggle-open' %>">
+            <%= bookingOpen ? t.bookingCloseBtn : t.bookingOpenBtn %>
+          </button>
+        </form>
+      </div>
+
+      <h2><%= t.adminEquipAdd %></h2>
+      <form action="/admin/equipment" method="POST" class="form-grid">
+        <label><%= t.adminEquipNameLabel %> <input type="text" name="name" placeholder="<%= t.adminEquipNamePlaceholder %>" required /></label>
+        <label><%= t.adminEquipDescLabel %> <input type="text" name="description" /></label>
+        <label><%= t.adminEquipCapLabel %> <input type="number" name="capacity" min="1" value="1" required /></label>
+        <button type="submit" class="btn-primary"><%= t.adminEquipBtnAdd %></button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>📋 <%= t.adminRulesTitle %></h2>
+      <div class="subtitle" style="text-align:left;margin-bottom:16px;"><%= t.adminRulesSubtitle %></div>
+      <form action="/admin/rules" method="POST" class="form-grid">
+        <label><%= t.adminRulesMaxPerEq %>
+          <input type="number" name="max_per_equipment" min="1" value="<%= rules.maxPerEquipment %>" required />
+        </label>
+        <label><%= t.adminRulesMaxTotal %>
+          <input type="number" name="max_total" min="0" value="<%= rules.maxTotal %>" required />
+        </label>
+        <button type="submit" class="btn-primary"><%= t.adminRulesSave %></button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>⏰ <%= t.adminSlotTitle %></h2>
+      <div class="subtitle" style="text-align:left;margin-bottom:16px;"><%= t.adminSlotSubtitle %></div>
+
+      <% if (slots.length === 0) { %>
+        <div class="empty"><%= t.adminSlotEmpty %></div>
+      <% } else { %>
+        <div class="slot-manage-list">
+          <% slots.forEach(function(s) { %>
+            <div class="slot-manage-row">
+              <span class="slot-manage-time">⏱ <%= s.start %> – <%= s.end %></span>
+              <form action="/admin/slots/delete" method="POST" style="display:inline" onsubmit="return confirm('<%= t.adminSlotConfirmDelete %>')">
+                <input type="hidden" name="start" value="<%= s.start %>" />
+                <input type="hidden" name="end" value="<%= s.end %>" />
+                <button type="submit" class="link-btn"><%= t.adminSlotDelete %></button>
+              </form>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <form action="/admin/slots/add" method="POST" class="form-grid" style="margin-top:16px;">
+        <label><%= t.adminSlotStart %>
+          <input type="time" name="start" required step="1800" />
+        </label>
+        <label><%= t.adminSlotEnd %>
+          <input type="time" name="end" required step="1800" />
+        </label>
+        <button type="submit" class="btn-primary"><%= t.adminSlotBtnAdd %></button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2><%= t.adminEquipList %></h2>
+      <% if (equipment.length === 0) { %>
+        <div class="empty"><%= t.adminEquipEmpty %></div>
+      <% } else { %>
+        <% equipment.forEach(function(e) { %>
+          <div class="item-card">
+            <div class="item-info">
+              <div class="item-title"><%= e.name %></div>
+              <div class="item-meta"><%= e.description || '-' %></div>
+            </div>
+            <span class="badge capacity-badge"><%= t.adminEquipCapacity %> <%= e.capacity %> <%= t.seatLabel %></span>
+            <form action="/admin/equipment/<%= e.id %>/capacity" method="POST" class="capacity-form">
+              <input type="number" name="capacity" min="1" value="<%= e.capacity %>" />
+              <button type="submit" class="link-btn muted"><%= t.adminEquipCapacitySave %></button>
+            </form>
+            <span class="badge <%= e.active ? 'active' : 'inactive' %>"><%= e.active ? t.adminEquipActive : t.adminEquipInactive %></span>
+            <form action="/admin/equipment/<%= e.id %>/toggle" method="POST" style="display:inline">
+              <button type="submit" class="link-btn muted"><%= e.active ? t.adminEquipInactive : t.adminEquipActive %></button>
+            </form>
+            <form action="/admin/equipment/<%= e.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('<%= t.adminEquipConfirmDelete %>')">
+              <button type="submit" class="link-btn"><%= t.adminEquipDelete %></button>
+            </form>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

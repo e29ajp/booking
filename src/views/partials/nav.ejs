@@ -1,0 +1,17 @@
+<div class="user-bar">
+  <div class="user-info">
+    <% if (currentUser.avatar_url) { %><img src="<%= currentUser.avatar_url %>" alt="" /><% } %>
+    <span><%= currentUser.name %> (<%= currentUser.email %>)</span>
+  </div>
+  <div class="user-links">
+    <% if (currentUser.role === 'admin') { %>
+      <a href="/admin"><%= t.navManageEquipment %></a>
+      <a href="/admin/bookings"><%= t.navAllBookings %></a>
+      <a href="/admin/users"><%= t.navAllUsers %></a>
+    <% } %>
+    <a href="/"><%= t.navHome %></a>
+    <form action="/logout" method="POST" style="display:inline">
+      <button type="submit" class="logout-link"><%= t.navLogout %></button>
+    </form>
+  </div>
+</div>

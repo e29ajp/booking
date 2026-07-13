@@ -1,0 +1,4 @@
+<form action="/lang" method="POST" style="display:inline">
+  <input type="hidden" name="lang" value="<%= lang === 'th' ? 'en' : 'th' %>" />
+  <button type="submit" class="lang-btn"><%= t.langSwitch %></button>
+</form>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head>
+  <%- include('partials/head') %>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <%- include('partials/langbtn') %>
+  <div class="page">
+    <div class="card">
+      <div class="logo-wrap"><img src="/logostemlab.png" alt="STEM Lab" /></div>
+      <h1>🗓️ <%= t.appTitle %></h1>
+      <div class="subtitle"><%= t.loginSubtitle %></div>
+
+      <div class="login-screen">
+        <% if (error === 'domain_not_allowed') { %>
+          <div class="alert"><%= t.loginErrDomain %></div>
+        <% } else if (error) { %>
+          <div class="alert"><%= t.loginErrGeneric %></div>
+        <% } %>
+
+        <p><%= t.loginPrompt %></p>
+
+        <form id="googleForm" action="/auth/google" method="POST">
+          <input type="hidden" name="credential" id="credentialInput" />
+        </form>
+
+        <div id="g_id_onload"
+          data-client_id="<%= clientId %>"
+          data-callback="handleCredentialResponse"
+          data-auto_prompt="false">
+        </div>
+        <div style="display:flex; justify-content:center;">
+          <div class="g_id_signin" data-type="standard" data-size="large" data-shape="pill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function handleCredentialResponse(response) {
+      document.getElementById('credentialInput').value = response.credential;
+      document.getElementById('googleForm').submit();
+    }
+  </script>
+</body>
+</html>

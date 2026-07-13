@@ -1,0 +1,20 @@
+{
+  "name": "booking",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "migrate": "node src/db/migrate.js"
+  },
+  "dependencies": {
+    "connect-pg-simple": "^9.0.1",
+    "dayjs": "^1.11.10",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "google-auth-library": "^10.9.0",
+    "pg": "^8.11.5"
+  }
+}

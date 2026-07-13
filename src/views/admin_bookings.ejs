@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head><%- include('partials/head') %></head>
+<body>
+  <%- include('partials/langbtn') %>
+  <div class="page">
+    <div class="card">
+      <div class="logo-wrap"><img src="/logostemlab.png" alt="STEM Lab" /></div>
+      <h1>📊 <%= t.adminBookTitle %></h1>
+      <div class="subtitle"><%= t.adminBookSubtitle %></div>
+      <%- include('partials/nav') %>
+    </div>
+
+    <% if (weeks.length === 0) { %>
+      <div class="card"><div class="empty"><%= t.adminBookEmpty %></div></div>
+    <% } %>
+
+    <% weeks.forEach(function(week, wi) { %>
+      <div class="card week-card">
+        <div class="week-header">
+          <div class="week-title">🗓️ <%= t.adminBookWeek %> <span class="week-date"><%= week.date %></span></div>
+          <div class="week-summary">
+            <% var totalBooked = week.equipment.reduce(function(s,e){return s+e.totalBooked;},0);
+               var totalSeats  = week.equipment.reduce(function(s,e){return s+e.totalSeats;},0);
+               var weekPct = totalSeats > 0 ? Math.round(totalBooked/totalSeats*100) : 0; %>
+            <span class="week-pct-badge <%= weekPct >= 100 ? 'pct-full' : weekPct >= 50 ? 'pct-mid' : 'pct-low' %>">
+              <%= weekPct %>%
+            </span>
+            <span class="week-pct-text"><%= totalBooked %>/<%= totalSeats %> <%= t.adminBookSeats %></span>
+          </div>
+        </div>
+
+        <div class="eq-grid">
+          <% week.equipment.forEach(function(eq, ei) { %>
+            <div class="eq-card">
+              <div class="eq-name"><%= eq.name %></div>
+
+              <% var slotMap = {}; eq.slots.forEach(function(s){ slotMap[s.start+'-'+s.end] = s; }); %>
+              <% slots.forEach(function(sl) { %>
+                <% var key = sl.start+'-'+sl.end; var s = slotMap[key]; var booked = s ? s.booked : 0; var pct = Math.round(booked/eq.capacity*100); %>
+                <div class="slot-row">
+                  <span class="slot-label"><%= sl.start %>–<%= sl.end %></span>
+                  <div class="prog-wrap">
+                    <div class="prog-bar" style="width:<%= Math.min(pct,100) %>%; background:<%= pct>=100?'#cf1322':pct>=60?'#fa8c16':'#1a8a4c' %>"></div>
+                  </div>
+                  <span class="slot-count <%= pct>=100?'count-full':'' %>"><%= booked %>/<%= eq.capacity %></span>
+                  <% if (s && s.bookings.length > 0) { %>
+                    <button class="toggle-btn" onclick="toggleWho(this)">▾ <%= t.adminBookShowWho %></button>
+                    <div class="who-list hidden">
+                      <% s.bookings.forEach(function(bk) { %>
+                        <div class="who-row">
+                          <span class="who-name"><%= bk.name %></span>
+                          <span class="who-email"><%= bk.email %></span>
+                          <form action="/bookings/<%= bk.id %>/cancel" method="POST" style="display:inline" onsubmit="return confirm('ยกเลิกการจองของ <%= bk.name %>?')">
+                            <button type="submit" class="link-btn"><%= t.adminBookCancel %></button>
+                          </form>
+                        </div>
+                      <% }) %>
+                    </div>
+                  <% } else { %>
+                    <span class="no-book"><%= t.adminBookNoBooking %></span>
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <script>
+    function toggleWho(btn) {
+      var list = btn.nextElementSibling;
+      var open = !list.classList.contains('hidden');
+      list.classList.toggle('hidden', open);
+      btn.textContent = open ? '▾ <%= t.adminBookShowWho %>' : '▴ <%= t.adminBookShowWho %>';
+    }
+  </script>
+</body>
+</html>
