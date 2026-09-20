@@ -2,7 +2,8 @@ const router = require('express').Router();
 const dayjs = require('dayjs');
 const db = require('../db');
 const { ensureAuthenticated } = require('../auth');
-const { isFriday, getUpcomingFridays } = require('../slots');
+const { isBookingDay, getUpcomingDays } = require('../slots');
+const { getBookingDay } = require('../db/booking-day');
 const { getSlots, isValidSlot } = require('../db/slots-setting');
 const { getBookingRules } = require('../db/booking-rules');
 
@@ -29,6 +30,7 @@ router.get('/', ensureAuthenticated, async (req, res, next) => {
     ]);
 
     const bookingOpen = settingRes.rows.length ? settingRes.rows[0].value === 'true' : false;
+    const bookingDay = await getBookingDay();
 
     res.render('index', {
       user: req.user,
@@ -36,7 +38,8 @@ router.get('/', ensureAuthenticated, async (req, res, next) => {
       myBookings: myBookings.rows,
       pastBookings: pastBookings.rows,
       slots,
-      fridays: getUpcomingFridays(),
+      fridays: getUpcomingDays(bookingDay),
+      bookingDay,
       bookingOpen,
     });
   } catch (err) {
@@ -122,8 +125,12 @@ router.post('/bookings', ensureAuthenticated, async (req, res, next) => {
     if (!equipment_id || !booking_date || !start_time || !end_time) {
       return res.status(400).render('error', { message: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
     }
-    if (!isFriday(booking_date)) {
-      return res.status(400).render('error', { message: 'จองได้เฉพาะวันศุกร์เท่านั้น' });
+    const bookingDay = await getBookingDay();
+    if (!isBookingDay(booking_date, bookingDay)) {
+      const dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+      const dayNamesEn = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const dn = res.locals.lang === 'en' ? dayNamesEn[bookingDay] : dayNames[bookingDay];
+      return res.status(400).render('error', { message: res.locals.lang === 'en' ? `Booking is only allowed on ${dn}.` : `จองได้เฉพาะวัน${dn}เท่านั้น` });
     }
 
     const slots = await getSlots();

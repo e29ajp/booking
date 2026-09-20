@@ -26,7 +26,9 @@
               <% }) %>
             </select>
           </label>
-          <label><%= t.labelDate %>
+          <% var dayNamesTh2 = ['วันอาทิตย์ที่','วันจันทร์ที่','วันอังคารที่','วันพุธที่','วันพฤหัสบดีที่','วันศุกร์ที่','วันเสาร์ที่']; %>
+          <% var dayNamesEn2 = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; %>
+          <label><%= lang==='en' ? dayNamesEn2[bookingDay] : dayNamesTh2[bookingDay] %>
             <select name="booking_date" id="dateInput" required>
               <option value=""><%= t.selectDate %></option>
               <% fridays.forEach(function(f) { %>

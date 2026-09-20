@@ -130,6 +130,13 @@ button { cursor: pointer; }
 .btn-toggle-close { background: #cf1322; color: #fff; }
 .btn-toggle-close:hover { background: #b81017; }
 
+.day-select {
+  font-size: 15px; font-weight: 700; padding: 8px 14px;
+  border-radius: 10px; border: 2px solid #764ba2; color: #764ba2;
+  background: #fff; cursor: pointer; outline: none;
+}
+.day-select:focus { box-shadow: 0 0 0 3px rgba(118,75,162,.25); }
+
 /* equipment / booking cards */
 .item-card {
   display: flex; align-items: center; justify-content: space-between;

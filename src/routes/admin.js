@@ -1,20 +1,32 @@
 const router = require('express').Router();
 const db = require('../db');
 const { ensureAdmin } = require('../auth');
-const { getUpcomingFridays } = require('../slots');
+const { getUpcomingFridays, getUpcomingDays } = require('../slots');
 const { getSlots, saveSlots } = require('../db/slots-setting');
 const { getBookingRules, saveBookingRules } = require('../db/booking-rules');
+const { getBookingDay, saveBookingDay } = require('../db/booking-day');
 
 router.get('/admin', ensureAdmin, async (req, res, next) => {
   try {
-    const [equipment, settingRes, slots, rules] = await Promise.all([
+    const [equipment, settingRes, slots, rules, bookingDay] = await Promise.all([
       db.query('SELECT * FROM equipment ORDER BY id'),
       db.query("SELECT value FROM settings WHERE key = 'booking_open'"),
       getSlots(),
       getBookingRules(),
+      getBookingDay(),
     ]);
     const bookingOpen = settingRes.rows.length ? settingRes.rows[0].value === 'true' : false;
-    res.render('admin_equipment', { user: req.user, equipment: equipment.rows, bookingOpen, slots, rules });
+    res.render('admin_equipment', { user: req.user, equipment: equipment.rows, bookingOpen, slots, rules, bookingDay });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Save booking day
+router.post('/admin/booking-day', ensureAdmin, async (req, res, next) => {
+  try {
+    await saveBookingDay(req.body.booking_day);
+    res.redirect('/admin');
   } catch (err) {
     next(err);
   }
@@ -163,8 +175,9 @@ router.get('/admin/bookings', ensureAdmin, async (req, res, next) => {
       return { date, equipment };
     });
 
-    // Also collect weeks that have NO bookings yet from upcoming Fridays
-    const upcomingFridays = getUpcomingFridays();
+    // Also collect weeks that have NO bookings yet from upcoming booking days
+    const bookingDay = await getBookingDay();
+    const upcomingFridays = getUpcomingDays(bookingDay);
     upcomingFridays.forEach((date) => {
       if (!weeksMap[date]) {
         weeks.push({

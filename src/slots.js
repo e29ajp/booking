@@ -14,13 +14,23 @@ function isFriday(dateStr) {
   return dayjs(dateStr).day() === 5;
 }
 
-// Only return the next Friday if it is within 7 days from today
-function getUpcomingFridays() {
+// Check if dateStr falls on the configured booking day (0=Sun..6=Sat)
+function isBookingDay(dateStr, dayNum) {
+  return dayjs(dateStr).day() === dayNum;
+}
+
+// Return the next occurrence of dayNum (0-6) if it is within 7 days from today
+function getUpcomingDays(dayNum) {
   let d = dayjs().startOf('day');
-  while (d.day() !== 5) d = d.add(1, 'day');
+  while (d.day() !== dayNum) d = d.add(1, 'day');
   const diff = d.diff(dayjs().startOf('day'), 'day');
   if (diff <= 7) return [d.format('YYYY-MM-DD')];
   return [];
 }
 
-module.exports = { SLOTS, isValidSlot, isFriday, getUpcomingFridays };
+// Legacy wrapper kept for backward compat
+function getUpcomingFridays() {
+  return getUpcomingDays(5);
+}
+
+module.exports = { SLOTS, isValidSlot, isFriday, isBookingDay, getUpcomingDays, getUpcomingFridays };

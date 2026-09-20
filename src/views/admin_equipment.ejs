@@ -21,6 +21,19 @@
         </form>
       </div>
 
+      <div class="booking-day-bar" style="margin:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="font-weight:600;"><%= lang==='en'?'Booking Day:':'วันที่เปิดให้จอง:' %></span>
+        <form action="/admin/booking-day" method="POST" style="display:flex;align-items:center;gap:8px;">
+          <select name="booking_day" class="day-select" onchange="this.form.submit()">
+            <% var dayNamesTh = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์']; %>
+            <% var dayNamesEn = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; %>
+            <% for(var d=0;d<7;d++) { %>
+              <option value="<%= d %>" <%= bookingDay===d?'selected':'' %>><%= lang==='en'?dayNamesEn[d]:dayNamesTh[d] %></option>
+            <% } %>
+          </select>
+        </form>
+      </div>
+
       <h2><%= t.adminEquipAdd %></h2>
       <form action="/admin/equipment" method="POST" class="form-grid">
         <label><%= t.adminEquipNameLabel %> <input type="text" name="name" placeholder="<%= t.adminEquipNamePlaceholder %>" required /></label>
